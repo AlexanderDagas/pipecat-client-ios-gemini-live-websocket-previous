@@ -120,7 +120,10 @@ final class AudioManager {
     }
 
     func stopManaging() {
-        assert(self.isManaging == true)
+        guard self.isManaging else {
+            // Optionally, log a message or handle the case where stopManaging is called when not managing
+            return
+        }
 
         self.isManaging = false
         
