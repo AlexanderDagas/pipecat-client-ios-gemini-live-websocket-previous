@@ -1,4 +1,5 @@
 import AVFAudio
+import UIKit
 
 protocol AudioManagerDelegate: AnyObject {
     func audioManagerDidChangeAvailableDevices(_ audioManager: AudioManager)
