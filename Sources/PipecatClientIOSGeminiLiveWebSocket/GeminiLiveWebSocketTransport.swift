@@ -182,7 +182,7 @@ public class GeminiLiveWebSocketTransport: Transport {
         
         // Send error response to indicate failure
         onMessage?(.init(
-            type: .errorResponse,
+            type: RTVIMessageInbound.MessageType.ERROR_RESPONSE,
             data: "Message sending not supported in Gemini WebSocket transport",
             id: message.id
         ))
@@ -340,7 +340,7 @@ extension GeminiLiveWebSocketTransport: GeminiLiveWebSocketConnectionDelegate {
         // TODO: can we fill in more meaningful BotReadyData someday?
         let botReadyData = BotReadyData(version: "n/a", about: "Gemini Live WebSocket Bot")
         onMessage?(.init(
-            type: .botReady,
+            type: RTVIMessageInbound.MessageType.BOT_READY,
             data: String(data: try! JSONEncoder().encode(botReadyData), encoding: .utf8),
             id: String(UUID().uuidString.prefix(8))
         ))
@@ -363,11 +363,11 @@ extension GeminiLiveWebSocketTransport: GeminiLiveWebSocketConnectionDelegate {
 
 extension GeminiLiveWebSocketTransport: AudioPlayerDelegate {
     func audioPlayerDidStartPlayback(_ audioPlayer: AudioPlayer) {
-        delegate?.onBotStartedSpeaking(participant: connectedBotParticipant)
+        delegate?.onBotStartedSpeaking()
     }
     
     func audioPlayerDidFinishPlayback(_ audioPlayer: AudioPlayer) {
-        delegate?.onBotStoppedSpeaking(participant: connectedBotParticipant)
+        delegate?.onBotStoppedSpeaking()
     }
     
     func audioPlayer(_ audioPlayer: AudioPlayer, didGetAudioLevel audioLevel: Float) {
@@ -405,6 +405,6 @@ extension GeminiLiveWebSocketTransport: AudioManagerDelegate {
 
 extension MediaTrackId {
     func toMediaStreamTrack() -> MediaStreamTrack? {
-        return MediaStreamTrack(id: self.id)
+        return MediaStreamTrack(id: self, kind: .audio)
     }
 }
