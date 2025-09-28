@@ -25,7 +25,7 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
     public weak var delegate: GeminiLiveWebSocketConnectionDelegate? = nil
     
     // Default initializer for compatibility with transport
-    init() {
+    override init() {
         // We'll set options later via configure method
         self.options = nil
         super.init()
@@ -178,7 +178,7 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
         socket?.cancel(with: .normalClosure, reason: nil)
     }
     
-    override func urlSession(
+    func urlSession(
         _ session: URLSession,
         webSocketTask: URLSessionWebSocketTask,
         didOpenWithProtocol protocol: String?
@@ -186,7 +186,7 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
 //        print("web socket opened!")
     }
     
-    override func urlSession(
+    func urlSession(
         _ session: URLSession,
         webSocketTask: URLSessionWebSocketTask,
         didCloseWith closeCode: URLSessionWebSocketTask.CloseCode,
