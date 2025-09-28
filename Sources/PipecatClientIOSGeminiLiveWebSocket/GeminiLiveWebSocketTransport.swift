@@ -15,11 +15,18 @@ public class GeminiLiveWebSocketTransport: Transport {
     
     public required init(options: PipecatClientOptions) {
         // Extract what we need from PipecatClientOptions
-        // Note: PipecatClientOptions has different structure than RTVIClientOptions
         self.enableMic = options.enableMic
         self.enableCam = options.enableCam
         
         connection = GeminiLiveWebSocketConnection()
+        // Configure the connection with API key and other settings
+        // You'll need to extract these from somewhere - maybe from your LiveCallModel
+        connection.configure(
+            apiKey: "YOUR_API_KEY_HERE", // This needs to come from somewhere
+            initialMessages: [],
+            generationConfig: nil
+        )
+        
         connection.delegate = self
         audioPlayer.delegate = self
         audioRecorder.delegate = self
