@@ -13,25 +13,32 @@ public class GeminiLiveWebSocketTransport: Transport {
     /// RTVI inbound message handler (for sending RTVI-style messages to voice client code to handle)
     public var onMessage: ((RTVIMessageInbound) -> Void)?
     
-    public required init(options: PipecatClientOptions) {
-        // Extract what we need from PipecatClientOptions
-        self.enableMic = options.enableMic
-        self.enableCam = options.enableCam
+    public required init() {
+        self.enableMic = true
+        self.enableCam = false
         
         connection = GeminiLiveWebSocketConnection()
-        // Configure the connection with API key and other settings
-        // You'll need to extract these from somewhere - maybe from your LiveCallModel
-        connection.configure(
-            apiKey: "YOUR_API_KEY_HERE", // This needs to come from somewhere
-            initialMessages: [],
-            generationConfig: nil
-        )
-        
         connection.delegate = self
         audioPlayer.delegate = self
         audioRecorder.delegate = self
         audioManager.delegate = self
+    }
+
+    // Add this new method after the init
+    public func initialize(options: PipecatClientOptions) {
+        // Extract what we need from PipecatClientOptions
+        self.enableMic = options.enableMic
+        self.enableCam = options.enableCam
         logUnsupportedOptions()
+    }
+
+    // Add this method to configure with API key
+    public func configure(apiKey: String, initialMessages: [WebSocketMessages.Outbound.TextInput] = [], generationConfig: Value? = nil) {
+        connection.configure(
+            apiKey: apiKey,
+            initialMessages: initialMessages,
+            generationConfig: generationConfig
+        )
     }
     
     public func initDevices() async throws {
@@ -70,7 +77,7 @@ public class GeminiLiveWebSocketTransport: Transport {
         _selectedMic = nil
     }
     
-    public func connect(connectionParams: any TransportConnectionParams) async throws {
+    public func connect(transportParams: TransportConnectionParams?) async throws {
         self.setState(state: .connecting)
         
         // start audio player
@@ -255,8 +262,8 @@ public class GeminiLiveWebSocketTransport: Transport {
     
     // MARK: - Private
     
-    private let enableMic: Bool
-    private let enableCam: Bool
+    private var enableMic: Bool
+    private var enableCam: Bool
     private var _state: TransportState = .disconnected
     private let connection: GeminiLiveWebSocketConnection
     private let audioManager = AudioManager()
