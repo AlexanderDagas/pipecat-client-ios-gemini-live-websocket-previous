@@ -8,14 +8,18 @@ public class GeminiLiveWebSocketTransport: Transport {
     // MARK: - Public
     
     /// Voice client delegate (used directly by user's code)
-    public weak var delegate: PipecatClientIOS.RTVIClientDelegate?
+    public weak var delegate: PipecatClientDelegate?
     
     /// RTVI inbound message handler (for sending RTVI-style messages to voice client code to handle)
-    public var onMessage: ((PipecatClientIOS.RTVIMessageInbound) -> Void)?
+    public var onMessage: ((RTVIMessageInbound) -> Void)?
     
-    public required init(options: PipecatClientIOS.RTVIClientOptions) {
-        self.options = options
-        connection = GeminiLiveWebSocketConnection(options: options.webSocketConnectionOptions)
+    public required init(options: PipecatClientOptions) {
+        // Extract what we need from PipecatClientOptions
+        // Note: PipecatClientOptions has different structure than RTVIClientOptions
+        self.enableMic = options.enableMic
+        self.enableCam = options.enableCam
+        
+        connection = GeminiLiveWebSocketConnection()
         connection.delegate = self
         audioPlayer.delegate = self
         audioRecorder.delegate = self
@@ -59,7 +63,7 @@ public class GeminiLiveWebSocketTransport: Transport {
         _selectedMic = nil
     }
     
-    public func connect(authBundle: PipecatClientIOS.AuthBundle?) async throws {
+    public func connect(connectionParams: any TransportConnectionParams) async throws {
         self.setState(state: .connecting)
         
         // start audio player
@@ -67,7 +71,7 @@ public class GeminiLiveWebSocketTransport: Transport {
         
         // start audio input if needed
         // this is done before connecting WebSocket to guarantee that by the time we transition to the .connected state isMicEnabled() reflects the truth
-        if options.enableMic {
+        if enableMic {
             try audioRecorder.resume()
         }
         
@@ -107,32 +111,32 @@ public class GeminiLiveWebSocketTransport: Transport {
         setState(state: .disconnected)
     }
     
-    public func getAllMics() -> [PipecatClientIOS.MediaDeviceInfo] {
+    public func getAllMics() -> [MediaDeviceInfo] {
         audioManager.availableDevices.map { $0.toRtvi() }
     }
     
-    public func getAllCams() -> [PipecatClientIOS.MediaDeviceInfo] {
+    public func getAllCams() -> [MediaDeviceInfo] {
         logOperationNotSupported(#function)
         return []
     }
     
-    public func updateMic(micId: PipecatClientIOS.MediaDeviceId) async throws {
+    public func updateMic(micId: MediaDeviceId) async throws {
         audioManager.preferredAudioDevice = .init(deviceID: micId.id)
         
         // Refresh what we should report as the selected mic
         refreshSelectedMicIfNeeded()
     }
     
-    public func updateCam(camId: PipecatClientIOS.MediaDeviceId) async throws {
+    public func updateCam(camId: MediaDeviceId) async throws {
         logOperationNotSupported(#function)
     }
     
     /// What we report as the selected mic.
-    public func selectedMic() -> PipecatClientIOS.MediaDeviceInfo? {
+    public func selectedMic() -> MediaDeviceInfo? {
         _selectedMic
     }
     
-    public func selectedCam() -> PipecatClientIOS.MediaDeviceInfo? {
+    public func selectedCam() -> MediaDeviceInfo? {
         logOperationNotSupported(#function)
         return nil
     }
@@ -158,7 +162,7 @@ public class GeminiLiveWebSocketTransport: Transport {
         return audioRecorder.isRecording
     }
     
-    public func sendMessage(message: PipecatClientIOS.RTVIMessageOutbound) throws {
+    public func sendMessage(message: RTVIMessageOutbound) throws {
         if let data = message.decodeActionData(), data.service == "llm" && data.action == "append_to_messages" {
             let messagesArgument = data.arguments?.first { $0.name == "messages" }
             if let messages = messagesArgument?.value.toTextInputWebSocketMessagesArray() {
@@ -181,7 +185,7 @@ public class GeminiLiveWebSocketTransport: Transport {
             } else {
                 logOperationNotSupported("\(#function) of type '\(message.type)'")
             }
-            // Tell RTVIClient that sendMessage() has failed so the user's completion handler can run
+            // Tell PipecatClient that sendMessage() has failed so the user's completion handler can run
             onMessage?(.init(
                 type: RTVIMessageInbound.MessageType.ERROR_RESPONSE,
                 data: "", // passing nil causes a crash
@@ -190,11 +194,11 @@ public class GeminiLiveWebSocketTransport: Transport {
         }
     }
     
-    public func state() -> PipecatClientIOS.TransportState {
+    public func state() -> TransportState {
         self._state
     }
     
-    public func setState(state: PipecatClientIOS.TransportState) {
+    public func setState(state: TransportState) {
         let previousState = self._state
         
         self._state = state
@@ -225,7 +229,7 @@ public class GeminiLiveWebSocketTransport: Transport {
         return [.connected, .ready].contains(self._state)
     }
     
-    public func tracks() -> PipecatClientIOS.Tracks? {
+    public func tracks() -> Tracks? {
         return .init(
             local: .init(
                 audio: localAudioTrackID,
@@ -244,7 +248,8 @@ public class GeminiLiveWebSocketTransport: Transport {
     
     // MARK: - Private
     
-    private let options: RTVIClientOptions
+    private let enableMic: Bool
+    private let enableCam: Bool
     private var _state: TransportState = .disconnected
     private let connection: GeminiLiveWebSocketConnection
     private let audioManager = AudioManager()
@@ -275,28 +280,10 @@ public class GeminiLiveWebSocketTransport: Transport {
     }
     
     private func logUnsupportedOptions() {
-        if options.enableCam {
+        if enableCam {
             logOperationNotSupported("enableCam option")
         }
-        if !options.services.isEmpty {
-            logOperationNotSupported("services option")
-        }
-        if options.customBodyParams != nil || options.params.requestData != nil {
-            logOperationNotSupported("params.requestData/customBodyParams option")
-        }
-        if options.customHeaders != nil || !options.params.headers.isEmpty {
-            logOperationNotSupported("params.headers/customBodyParams option")
-        }
-        let config = options.config ?? options.params.config
-        if config.contains { $0.service != "llm" } {
-            logOperationNotSupported("config for service other than 'llm'")
-        }
-        if let llmConfig = config.llmConfig {
-            let supportedLlmConfigOptions = ["api_key", "initial_messages", "generation_config"]
-            if llmConfig.options.contains { !supportedLlmConfigOptions.contains($0.name) } {
-                logOperationNotSupported("'llm' service config option other than \(supportedLlmConfigOptions.joined(separator: ", "))")
-            }
-        }
+        // Note: Removed options validation since PipecatClientOptions has different structure
     }
     
     private func logOperationNotSupported(_ operationName: String) {
@@ -337,7 +324,7 @@ public class GeminiLiveWebSocketTransport: Transport {
     }
     
     /// Selected mic is a value derived from the preferredAudioDevice and the set of available devices, so it may change whenever either of those change.
-    private func getSelectedMic() -> PipecatClientIOS.MediaDeviceInfo? {
+    private func getSelectedMic() -> MediaDeviceInfo? {
         audioManager.availableDevices.first { $0.deviceID == audioManager.preferredAudioDeviceIfAvailable?.deviceID }?.toRtvi()
     }
 }
