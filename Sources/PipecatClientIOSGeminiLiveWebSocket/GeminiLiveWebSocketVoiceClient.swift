@@ -5,7 +5,7 @@ public class GeminiLiveWebSocketVoiceClient {
     private let pipecatClient: PipecatClient
     private let transport: GeminiLiveWebSocketTransport
     
-    public init(apiKey: String, initialMessages: [WebSocketMessages.Outbound.TextInput] = [], generationConfig: Value? = nil) {
+    internal init(apiKey: String, initialMessages: [WebSocketMessages.Outbound.TextInput] = [], generationConfig: Value? = nil) {
         // Create transport
         self.transport = GeminiLiveWebSocketTransport()
         
@@ -22,6 +22,11 @@ public class GeminiLiveWebSocketVoiceClient {
             enableMic: true,
             enableCam: false
         ))
+    }
+    
+    // Public convenience initializer
+    public init(apiKey: String) {
+        self.init(apiKey: apiKey, initialMessages: [], generationConfig: nil)
     }
     
     public func start() async throws {
