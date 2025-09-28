@@ -24,11 +24,32 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
     
     public weak var delegate: GeminiLiveWebSocketConnectionDelegate? = nil
     
+    // Default initializer for compatibility with transport
+    init() {
+        // We'll set options later via configure method
+        self.options = nil
+        super.init()
+    }
+    
     init(options: Options) {
         self.options = options
+        super.init()
+    }
+    
+    // Method to configure the connection after initialization
+    func configure(apiKey: String, initialMessages: [WebSocketMessages.Outbound.TextInput] = [], generationConfig: Value? = nil) {
+        self.options = Options(
+            apiKey: apiKey,
+            initialMessages: initialMessages,
+            generationConfig: generationConfig
+        )
     }
     
     func connect() async throws {
+        guard let options = options else {
+            throw NSError(domain: "GeminiLiveWebSocketConnection", code: 1, userInfo: [NSLocalizedDescriptionKey: "Connection not configured. Call configure() first."])
+        }
+        
         guard socket == nil else {
             assertionFailure()
             return
@@ -41,7 +62,8 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
             delegateQueue: OperationQueue()
         )
         let host = "preprod-generativelanguage.googleapis.com"
-        let url = URL(string: "wss://\(host)/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=\(options.apiKey)")
+        // Updated URL to match the working fork you found
+        let url = URL(string: "wss://livewire-backend-qb3avtw17q-zf.a.run.app")
         let socket = urlSession.webSocketTask(with: url!)
         self.socket = socket
         
@@ -50,7 +72,8 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
         socket.resume()
         
         // Send initial setup message
-        let model = "models/gemini-2.0-flash-exp" // TODO: make this configurable someday
+        // Updated model to match the working fork
+        let model = "models/gemini-2.5-flash-preview-native-audio-dialog"
         try await sendMessage(
             message: WebSocketMessages.Outbound.Setup(
                 model: model,
@@ -176,7 +199,7 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
     
     // MARK: - Private
     
-    private let options: GeminiLiveWebSocketConnection.Options
+    private var options: GeminiLiveWebSocketConnection.Options?
     private var socket: URLSessionWebSocketTask?
     private var didFinishConnect = false
 }
