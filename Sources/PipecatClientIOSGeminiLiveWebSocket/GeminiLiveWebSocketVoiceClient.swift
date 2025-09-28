@@ -32,7 +32,12 @@ public class GeminiLiveWebSocketVoiceClient {
     
     public func start() async throws {
         try await pipecatClient.initDevices()
-        try await pipecatClient.connect()
+        
+        // Create empty connection params since we don't need specific transport parameters
+        struct EmptyConnectionParams: TransportConnectionParams {}
+        let connectionParams = EmptyConnectionParams()
+        
+        try await pipecatClient.connect(transportParams: connectionParams)
     }
     
     public func disconnect() async {
