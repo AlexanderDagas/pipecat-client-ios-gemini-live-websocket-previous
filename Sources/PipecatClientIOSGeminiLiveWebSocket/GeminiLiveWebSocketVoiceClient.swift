@@ -1,6 +1,7 @@
 import Foundation
 import PipecatClientIOS
 
+@MainActor
 public class GeminiLiveWebSocketVoiceClient {
     private let pipecatClient: PipecatClient
     private let transport: GeminiLiveWebSocketTransport
@@ -25,13 +26,13 @@ public class GeminiLiveWebSocketVoiceClient {
     }
     
     // Public convenience initializer
-    public init(apiKey: String) {
+    public convenience init(apiKey: String) {
         self.init(apiKey: apiKey, initialMessages: [], generationConfig: nil)
     }
     
     public func start() async throws {
         try await pipecatClient.initDevices()
-        try await pipecatClient.connect()
+        try await pipecatClient.connect(transportParams: nil)
     }
     
     public func disconnect() async {
