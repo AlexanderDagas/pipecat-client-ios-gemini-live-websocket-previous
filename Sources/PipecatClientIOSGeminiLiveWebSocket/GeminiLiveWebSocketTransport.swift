@@ -33,7 +33,7 @@ public class GeminiLiveWebSocketTransport: Transport {
     }
 
     // Add this method to configure with API key
-    public func configure(apiKey: String, initialMessages: [WebSocketMessages.Outbound.TextInput] = [], generationConfig: Value? = nil) {
+    internal func configure(apiKey: String, initialMessages: [WebSocketMessages.Outbound.TextInput] = [], generationConfig: Value? = nil) {
         connection.configure(
             apiKey: apiKey,
             initialMessages: initialMessages,
