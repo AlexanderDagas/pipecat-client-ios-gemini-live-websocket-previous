@@ -32,7 +32,7 @@ public class GeminiLiveWebSocketVoiceClient {
     
     public func start() async throws {
         try await pipecatClient.initDevices()
-        try await pipecatClient.connect(transportParams: nil)
+        try await pipecatClient.connect()
     }
     
     public func disconnect() async {
