@@ -178,7 +178,7 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
         socket?.cancel(with: .normalClosure, reason: nil)
     }
     
-    func urlSession(
+    override func urlSession(
         _ session: URLSession,
         webSocketTask: URLSessionWebSocketTask,
         didOpenWithProtocol protocol: String?
@@ -186,7 +186,7 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
 //        print("web socket opened!")
     }
     
-    func urlSession(
+    override func urlSession(
         _ session: URLSession,
         webSocketTask: URLSessionWebSocketTask,
         didCloseWith closeCode: URLSessionWebSocketTask.CloseCode,
