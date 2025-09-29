@@ -61,9 +61,8 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
             delegate: self,
             delegateQueue: OperationQueue()
         )
-        let host = "preprod-generativelanguage.googleapis.com"
-        // Updated URL to match the working fork you found
-        let url = URL(string: "wss://livewire-backend-qb3avtw17q-zf.a.run.app")
+        // Use the official Gemini Live API WebSocket endpoint
+        let url = URL(string: "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=\(options.apiKey)")
         let socket = urlSession.webSocketTask(with: url!)
         self.socket = socket
         
@@ -99,7 +98,7 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
                     
                     switch message {
                     case .data(let data):
-//                        print("received server message: \(String(data: data, encoding: .utf8)?.prefix(50))")
+                        print("📨 Received server message: \(String(data: data, encoding: .utf8)?.prefix(100) ?? "nil")")
                         
                         // Check for setup complete message
                         let setupCompleteMessage = try? decoder.decode(
@@ -138,6 +137,7 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
                         continue
                     }
                 } catch {
+                    print("❌ WebSocket receive error: \(error)")
                     // Socket is known to be closed (set to nil), so break out of the socket receive loop
                     if self.socket == nil {
                         break
@@ -169,7 +169,7 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
             data: encoder.encode(message),
             encoding: .utf8
         )!
-//        print("sending message: \(messageString.prefix(50))")
+        print("📤 Sending message: \(messageString.prefix(100))")
         try await socket?.send(.string(messageString))
     }
     
@@ -183,7 +183,7 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
         webSocketTask: URLSessionWebSocketTask,
         didOpenWithProtocol protocol: String?
     ) {
-//        print("web socket opened!")
+        print("🔌 WebSocket opened successfully!")
     }
     
     func urlSession(
@@ -192,7 +192,7 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
         didCloseWith closeCode: URLSessionWebSocketTask.CloseCode,
         reason: Data?
     ) {
-//        print("web socket closed! close code \(closeCode)")
+        print("❌ WebSocket closed! Close code: \(closeCode), reason: \(reason != nil ? String(data: reason!, encoding: .utf8) ?? "nil" : "nil")")
         socket = nil
         didFinishConnect = false
     }
