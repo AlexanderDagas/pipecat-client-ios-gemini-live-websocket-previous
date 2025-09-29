@@ -84,6 +84,23 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
         // NOTE: at this point no need to wait for socket to open to start sending events
         socket.resume()
         
+        // Build generationConfig ensuring AUDIO modality is requested
+        let genConfig: Value = {
+            if let cfg = options.generationConfig { return cfg }
+            return Value.object([
+                "responseModalities": .array([.string("AUDIO")]),
+                "responseMimeType": .string("audio/pcm"),
+                "mediaResolution": .string("MEDIA_RESOLUTION_MEDIUM"),
+                "speechConfig": .object([
+                    "voiceConfig": .object([
+                        "prebuiltVoiceConfig": .object([
+                            "voiceName": .string("Gacrux")
+                        ])
+                    ])
+                ])
+            ])
+        }()
+
         // Send initial setup message with fallback across candidate models
         var setupSucceeded = false
         var lastError: Error?
@@ -94,7 +111,7 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
                 try await sendMessage(
                     message: WebSocketMessages.Outbound.Setup(
                         model: candidate,
-                        generationConfig: options.generationConfig
+                        generationConfig: genConfig
                     )
                 )
                 print("🔍 DEBUG: Setup message sent successfully for: \(candidate)")
