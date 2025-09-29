@@ -206,8 +206,11 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
         if !didFinishConnect {
             return
         }
+        // Send using supported schema: { "realtimeInput": { "audio": <base64> } }
+        struct RealtimeInputPayload: Encodable { let audio: Data }
+        struct RealtimeInputMessage: Encodable { let realtimeInput: RealtimeInputPayload }
         try await sendMessage(
-            message: WebSocketMessages.Outbound.AudioInput(audio: audio)
+            message: RealtimeInputMessage(realtimeInput: RealtimeInputPayload(audio: audio))
         )
     }
     
