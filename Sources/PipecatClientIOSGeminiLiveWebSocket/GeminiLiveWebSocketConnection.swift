@@ -84,17 +84,33 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
         // NOTE: at this point no need to wait for socket to open to start sending events
         socket.resume()
         
-        // Send initial setup message
-        // Use the current stable model for Gemini Live API
-        let model = "models/gemini-2.0-flash"
-        print("🔍 DEBUG: Sending setup message with model: \(model)")
-        try await sendMessage(
-            message: WebSocketMessages.Outbound.Setup(
-                model: model,
-                generationConfig: options.generationConfig
-            )
-        )
-        print("🔍 DEBUG: Setup message sent successfully")
+        // Send initial setup message with fallback across candidate models
+        var setupSucceeded = false
+        var lastError: Error?
+        currentModelIndex = 0
+        for candidate in modelCandidates {
+            do {
+                print("🔍 DEBUG: Trying setup with model candidate[\(currentModelIndex)]: \(candidate)")
+                try await sendMessage(
+                    message: WebSocketMessages.Outbound.Setup(
+                        model: candidate,
+                        generationConfig: options.generationConfig
+                    )
+                )
+                print("🔍 DEBUG: Setup message sent successfully for: \(candidate)")
+                setupSucceeded = true
+                break
+            } catch {
+                lastError = error
+                print("⚠️  DEBUG: Setup failed for model: \(candidate) with error: \(error.localizedDescription)")
+                currentModelIndex += 1
+                // brief backoff before trying next model
+                try? await Task.sleep(nanoseconds: 150_000_000)
+            }
+        }
+        if !setupSucceeded {
+            throw lastError ?? NSError(domain: "GeminiLiveWebSocketConnection", code: 2, userInfo: [NSLocalizedDescriptionKey: "All model candidates failed for setup message."])
+        }
         try Task.checkCancellation()
         
         // Send initial context messages
@@ -218,4 +234,12 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
     private var options: GeminiLiveWebSocketConnection.Options?
     private var socket: URLSessionWebSocketTask?
     private var didFinishConnect = false
+    // Candidate Live-supported models to try in order
+    private let modelCandidates: [String] = [
+        "models/gemini-2.5-flash-preview-native-audio-dialog",
+        "models/gemini-live-2.5-flash-preview",
+        "models/gemini-2.5-flash-exp-native-audio-thinking-dialog",
+        "models/gemini-2.5-flash-native-audio-preview-09-2025"
+    ]
+    private var currentModelIndex: Int = 0
 }
