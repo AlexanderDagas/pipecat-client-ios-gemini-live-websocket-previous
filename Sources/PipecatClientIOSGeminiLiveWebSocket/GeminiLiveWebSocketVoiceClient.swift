@@ -52,4 +52,33 @@ public class GeminiLiveWebSocketVoiceClient {
         get { transport.delegate }
         set { transport.delegate = newValue }
     }
+    
+    // Public method to configure system instruction and generation config
+    public func configure(systemInstruction: String) {
+        print("🔍 DEBUG: Configuring GeminiLiveWebSocketVoiceClient with system instruction")
+        print("🔍 DEBUG: System instruction length: \(systemInstruction.count)")
+        
+        let generationConfig = Value.object([
+            "systemInstruction": .string(systemInstruction),
+            "responseModalities": .array([.string("AUDIO")]),
+            "responseMimeType": .string("application/json"),
+            "mediaResolution": .string("MEDIA_RESOLUTION_MEDIUM"),
+            "speechConfig": .object([
+                "voiceConfig": .object([
+                    "prebuiltVoiceConfig": .object([
+                        "voiceName": .string("Gacrux")
+                    ])
+                ])
+            ])
+        ])
+        
+        // Configure the transport with the system instruction
+        transport.configure(
+            apiKey: transport.connection.options?.apiKey ?? "",
+            initialMessages: [],
+            generationConfig: generationConfig
+        )
+        
+        print("✅ GeminiLiveWebSocketVoiceClient configured with system instruction")
+    }
 }
