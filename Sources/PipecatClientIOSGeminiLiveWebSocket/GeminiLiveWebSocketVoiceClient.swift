@@ -33,15 +33,13 @@ public class GeminiLiveWebSocketVoiceClient {
     public func start() async throws {
         try await pipecatClient.initDevices()
         
-        // Create empty connection params since we don't need specific transport parameters
-        struct EmptyConnectionParams: TransportConnectionParams {}
-        let connectionParams = EmptyConnectionParams()
-        
-        try await pipecatClient.connect(transportParams: connectionParams)
+        // Connect directly through the transport without using startBot
+        // The transport will handle the WebSocket connection to Gemini Live API
+        try await transport.connect(transportParams: nil)
     }
     
     public func disconnect() async {
-        try? await pipecatClient.disconnect()
+        try? await transport.disconnect()
     }
     
     public var delegate: PipecatClientDelegate? {
