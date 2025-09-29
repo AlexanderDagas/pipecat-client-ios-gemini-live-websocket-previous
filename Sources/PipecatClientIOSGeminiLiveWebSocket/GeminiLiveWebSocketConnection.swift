@@ -108,35 +108,11 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
         for candidate in modelCandidates {
             do {
                 print("🔍 DEBUG: Trying setup with model candidate[\(currentModelIndex)]: \(candidate)")
-                // Build a low-latency realtime input config to reduce end-of-speech delay
-                let realtimeInputConfig: Value = .object([
-                    "automaticActivityDetection": .object([
-                        // More sensitive start and end of speech
-                        "startOfSpeechSensitivity": .string("START_SENSITIVITY_HIGH"),
-                        "endOfSpeechSensitivity": .string("END_SENSITIVITY_HIGH"),
-                        // Lower silence required before the model considers the user finished speaking
-                        "silenceDurationMs": .number(200),
-                        // Keep a bit of pre-speech audio for context
-                        "prefixPaddingMs": .number(300)
-                    ]),
-                    // Allow the model to begin responding at start of activity if needed
-                    "activityHandling": .string("START_OF_ACTIVITY_INTERRUPTS"),
-                    // Include all input in the turn so it can respond earlier
-                    "turnCoverage": .string("TURN_INCLUDES_ALL_INPUT")
-                ])
-
-                // Some SDKs do not surface all fields in their Setup struct, so send a custom payload
-                struct LowLatencySetup: Encodable {
-                    let model: String
-                    let generationConfig: Value
-                    let realtimeInputConfig: Value
-                }
-
+                // Use the supported Setup schema from WebSocketMessages
                 try await sendMessage(
-                    message: LowLatencySetup(
+                    message: WebSocketMessages.Outbound.Setup(
                         model: candidate,
-                        generationConfig: genConfig,
-                        realtimeInputConfig: realtimeInputConfig
+                        generationConfig: genConfig
                     )
                 )
                 print("🔍 DEBUG: Setup message sent successfully for: \(candidate)")
