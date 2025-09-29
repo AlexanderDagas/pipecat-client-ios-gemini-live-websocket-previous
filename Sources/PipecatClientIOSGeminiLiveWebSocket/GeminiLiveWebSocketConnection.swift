@@ -46,11 +46,17 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
     }
     
     func connect() async throws {
+        print("🔍 DEBUG: GeminiLiveWebSocketConnection.connect() called")
+        
         guard let options = options else {
+            print("🔍 DEBUG: No options configured - throwing error")
             throw NSError(domain: "GeminiLiveWebSocketConnection", code: 1, userInfo: [NSLocalizedDescriptionKey: "Connection not configured. Call configure() first."])
         }
         
+        print("🔍 DEBUG: Options found - API key: \(options.apiKey.prefix(20))...")
+        
         guard socket == nil else {
+            print("🔍 DEBUG: Socket already exists - returning")
             assertionFailure()
             return
         }
@@ -61,10 +67,18 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
             delegate: self,
             delegateQueue: OperationQueue()
         )
+        
         // Use the official Gemini Live API WebSocket endpoint
-        let url = URL(string: "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=\(options.apiKey)")
+        let urlString = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=\(options.apiKey)"
+        print("🔍 DEBUG: Attempting to connect to URL: \(urlString.prefix(100))...")
+        
+        let url = URL(string: urlString)
+        print("🔍 DEBUG: URL object created: \(url?.absoluteString.prefix(100) ?? "nil")...")
+        
         let socket = urlSession.webSocketTask(with: url!)
         self.socket = socket
+        
+        print("🔍 DEBUG: WebSocket task created successfully")
         
         // Connect
         // NOTE: at this point no need to wait for socket to open to start sending events
