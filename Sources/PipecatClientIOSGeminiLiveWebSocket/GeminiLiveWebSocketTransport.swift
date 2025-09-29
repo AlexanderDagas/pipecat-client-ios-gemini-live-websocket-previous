@@ -34,9 +34,34 @@ public class GeminiLiveWebSocketTransport: Transport {
 
     // Add this method to configure with API key
     internal func configure(apiKey: String, initialMessages: [WebSocketMessages.Outbound.TextInput] = [], generationConfig: Value? = nil) {
+        self._apiKey = apiKey
         connection.configure(
             apiKey: apiKey,
             initialMessages: initialMessages,
+            generationConfig: generationConfig
+        )
+    }
+    
+    // Add this method to configure with system instruction
+    internal func configureWithSystemInstruction(apiKey: String, systemInstruction: String) {
+        self._apiKey = apiKey
+        let generationConfig = Value.object([
+            "systemInstruction": .string(systemInstruction),
+            "responseModalities": .array([.string("AUDIO")]),
+            "responseMimeType": .string("application/json"),
+            "mediaResolution": .string("MEDIA_RESOLUTION_MEDIUM"),
+            "speechConfig": .object([
+                "voiceConfig": .object([
+                    "prebuiltVoiceConfig": .object([
+                        "voiceName": .string("Gacrux")
+                    ])
+                ])
+            ])
+        ])
+        
+        connection.configure(
+            apiKey: apiKey,
+            initialMessages: [],
             generationConfig: generationConfig
         )
     }
@@ -258,6 +283,7 @@ public class GeminiLiveWebSocketTransport: Transport {
     private var enableMic: Bool
     private var enableCam: Bool
     private var _state: TransportState = .disconnected
+    internal var _apiKey: String = ""
     internal let connection: GeminiLiveWebSocketConnection
     private let audioManager = AudioManager()
     private let audioPlayer = AudioPlayer()
