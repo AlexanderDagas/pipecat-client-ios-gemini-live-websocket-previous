@@ -78,19 +78,28 @@ public class GeminiLiveWebSocketTransport: Transport {
     }
     
     public func connect(transportParams: TransportConnectionParams?) async throws {
+        print("🔍 DEBUG: GeminiLiveWebSocketTransport.connect() called")
+        print("🔍 DEBUG: transportParams: \(transportParams as Any)")
+        
         self.setState(state: .connecting)
         
         // start audio player
+        print("🔍 DEBUG: Starting audio player")
         try audioPlayer.start()
         
         // start audio input if needed
         // this is done before connecting WebSocket to guarantee that by the time we transition to the .connected state isMicEnabled() reflects the truth
         if enableMic {
+            print("🔍 DEBUG: Resuming audio recorder (mic enabled)")
             try audioRecorder.resume()
+        } else {
+            print("🔍 DEBUG: Mic disabled - not starting audio recorder")
         }
         
         // start connecting
+        print("🔍 DEBUG: About to call connection.connect()")
         try await connection.connect()
+        print("🔍 DEBUG: connection.connect() completed")
         
         // initialize tracks (which are just dummy values)
         updateTracks(
