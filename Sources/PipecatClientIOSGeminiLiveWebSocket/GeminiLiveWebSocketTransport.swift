@@ -258,7 +258,7 @@ public class GeminiLiveWebSocketTransport: Transport {
     private var enableMic: Bool
     private var enableCam: Bool
     private var _state: TransportState = .disconnected
-    private let connection: GeminiLiveWebSocketConnection
+    internal let connection: GeminiLiveWebSocketConnection
     private let audioManager = AudioManager()
     private let audioPlayer = AudioPlayer()
     private let audioRecorder = AudioRecorder()
