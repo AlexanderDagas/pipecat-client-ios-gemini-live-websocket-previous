@@ -10,6 +10,9 @@ public class GeminiLiveWebSocketVoiceClient {
         // Create transport
         self.transport = GeminiLiveWebSocketTransport()
         
+        // Store the API key in the transport
+        self.transport._apiKey = apiKey
+        
         // Configure transport with API key
         self.transport.configure(
             apiKey: apiKey,
@@ -58,25 +61,11 @@ public class GeminiLiveWebSocketVoiceClient {
         print("🔍 DEBUG: Configuring GeminiLiveWebSocketVoiceClient with system instruction")
         print("🔍 DEBUG: System instruction length: \(systemInstruction.count)")
         
-        let generationConfig = Value.object([
-            "systemInstruction": .string(systemInstruction),
-            "responseModalities": .array([.string("AUDIO")]),
-            "responseMimeType": .string("application/json"),
-            "mediaResolution": .string("MEDIA_RESOLUTION_MEDIUM"),
-            "speechConfig": .object([
-                "voiceConfig": .object([
-                    "prebuiltVoiceConfig": .object([
-                        "voiceName": .string("Gacrux")
-                    ])
-                ])
-            ])
-        ])
-        
         // Configure the transport with the system instruction
-        transport.configure(
-            apiKey: transport.connection.options?.apiKey ?? "",
-            initialMessages: [],
-            generationConfig: generationConfig
+        // Use the stored API key from the transport
+        transport.configureWithSystemInstruction(
+            apiKey: transport._apiKey,
+            systemInstruction: systemInstruction
         )
         
         print("✅ GeminiLiveWebSocketVoiceClient configured with system instruction")
