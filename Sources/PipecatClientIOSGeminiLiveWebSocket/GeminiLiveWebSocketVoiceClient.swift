@@ -31,11 +31,17 @@ public class GeminiLiveWebSocketVoiceClient {
     }
     
     public func start() async throws {
+        print("🔍 DEBUG: GeminiLiveWebSocketVoiceClient.start() called")
+        
+        print("🔍 DEBUG: About to call pipecatClient.initDevices()")
         try await pipecatClient.initDevices()
+        print("🔍 DEBUG: pipecatClient.initDevices() completed")
         
         // Connect directly through the transport without using startBot
         // The transport will handle the WebSocket connection to Gemini Live API
+        print("🔍 DEBUG: About to call transport.connect()")
         try await transport.connect(transportParams: nil)
+        print("🔍 DEBUG: transport.connect() completed")
     }
     
     public func disconnect() async {
