@@ -89,7 +89,7 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
             if let cfg = options.generationConfig { return cfg }
             return Value.object([
                 "responseModalities": .array([.string("AUDIO")]),
-                "responseMimeType": .string("audio/pcm"),
+                "responseMimeType": .string("application/json"),
                 "mediaResolution": .string("MEDIA_RESOLUTION_MEDIUM"),
                 "speechConfig": .object([
                     "voiceConfig": .object([
