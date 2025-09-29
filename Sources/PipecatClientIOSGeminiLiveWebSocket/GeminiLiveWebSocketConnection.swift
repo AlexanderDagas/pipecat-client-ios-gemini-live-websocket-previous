@@ -85,14 +85,16 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
         socket.resume()
         
         // Send initial setup message
-        // Updated model to match the working fork
-        let model = "models/gemini-2.5-flash-preview-native-audio-dialog"
+        // Use the current stable model for Gemini Live API
+        let model = "models/gemini-2.0-flash"
+        print("🔍 DEBUG: Sending setup message with model: \(model)")
         try await sendMessage(
             message: WebSocketMessages.Outbound.Setup(
                 model: model,
                 generationConfig: options.generationConfig
             )
         )
+        print("🔍 DEBUG: Setup message sent successfully")
         try Task.checkCancellation()
         
         // Send initial context messages
