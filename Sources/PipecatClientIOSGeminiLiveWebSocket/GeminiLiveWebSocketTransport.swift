@@ -274,6 +274,13 @@ public class GeminiLiveWebSocketTransport: Transport {
     private var localAudioTrackID: MediaTrackId?
     private var botAudioTrackID: MediaTrackId?
     
+    // MARK: - End-of-speech detection config
+    private let silenceDbThreshold: Float = -40.0
+    private let silentFramesForEnd: Int = 6
+    private let audioStreamEndCooldownNs: UInt64 = 300_000_000
+    private var consecutiveSilentFrames: Int = 0
+    private var recentlySentAudioStreamEnd: Bool = false
+    
     private func hookUpAudioInputStream() {
         Task {
             for await audio in audioRecorder.streamAudio() {
@@ -389,8 +396,28 @@ extension GeminiLiveWebSocketTransport: AudioPlayerDelegate {
 
 extension GeminiLiveWebSocketTransport: AudioRecorderDelegate {
     func audioRecorder(_ audioPlayer: AudioRecorder, didGetAudioLevel audioLevel: Float) {
-        // onUserAudioLevel method doesn't exist in current API - remove this call
-        // or use alternative method if available
+        // Simple silence detection to signal end-of-speech quickly
+        let level = audioLevel // dBFS; lower is quieter
+        let isSilent = level < silenceDbThreshold
+        if isSilent {
+            consecutiveSilentFrames += 1
+            if !recentlySentAudioStreamEnd && consecutiveSilentFrames >= silentFramesForEnd {
+                recentlySentAudioStreamEnd = true
+                Task { [weak self] in
+                    guard let self else { return }
+                    do {
+                        try await self.connection.sendAudioStreamEnd()
+                    } catch {
+                        Logger.shared.warn("Failed to send audioStreamEnd: \(error.localizedDescription)")
+                    }
+                    // cooldown before allowing another audioStreamEnd to avoid spamming
+                    try? await Task.sleep(nanoseconds: audioStreamEndCooldownNs)
+                    self.recentlySentAudioStreamEnd = false
+                }
+            }
+        } else {
+            consecutiveSilentFrames = 0
+        }
     }
 }
 
