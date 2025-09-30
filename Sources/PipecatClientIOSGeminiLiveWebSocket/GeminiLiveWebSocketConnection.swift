@@ -113,10 +113,28 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
                 // Build systemInstruction as Content-like structure if provided
                 struct TextPart: Encodable { let text: String }
                 struct Content: Encodable { let parts: [TextPart] }
+                struct RealtimeInputConfig: Encodable {
+                    let automaticActivityDetection: AutomaticActivityDetection?
+                    let turnCoverage: String?
+                }
+                struct AutomaticActivityDetection: Encodable {
+                    let disabled: Bool?
+                    let startOfSpeechSensitivity: String?
+                    let endOfSpeechSensitivity: String?
+                    let silenceDurationMs: Int?
+                }
+                struct ProactivityConfig: Encodable { let proactiveAudio: Bool? }
+                struct SpeechConfig: Encodable { let voiceConfig: VoiceConfig }
+                struct VoiceConfig: Encodable { let prebuiltVoiceConfig: PrebuiltVoiceConfig }
+                struct PrebuiltVoiceConfig: Encodable { let voiceName: String }
                 struct SetupPayload: Encodable {
                     let model: String
                     let generationConfig: Value
                     let systemInstruction: Content?
+                    let realtimeInputConfig: RealtimeInputConfig?
+                    let proactivity: ProactivityConfig?
+                    let responseModalities: [String]?
+                    let speechConfig: SpeechConfig?
                 }
                 struct ClientMessage: Encodable { let setup: SetupPayload }
 
@@ -129,7 +147,23 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
                     setup: SetupPayload(
                         model: candidate,
                         generationConfig: genConfig,
-                        systemInstruction: systemInstruction
+                        systemInstruction: systemInstruction,
+                        realtimeInputConfig: RealtimeInputConfig(
+                            automaticActivityDetection: .init(
+                                disabled: false,
+                                startOfSpeechSensitivity: "START_SENSITIVITY_HIGH",
+                                endOfSpeechSensitivity: "END_SENSITIVITY_HIGH",
+                                silenceDurationMs: 150
+                            ),
+                            turnCoverage: "TURN_INCLUDES_ONLY_ACTIVITY"
+                        ),
+                        proactivity: ProactivityConfig(proactiveAudio: true),
+                        responseModalities: ["AUDIO"],
+                        speechConfig: SpeechConfig(
+                            voiceConfig: VoiceConfig(
+                                prebuiltVoiceConfig: PrebuiltVoiceConfig(voiceName: "Gacrux")
+                            )
+                        )
                     )
                 )
 
