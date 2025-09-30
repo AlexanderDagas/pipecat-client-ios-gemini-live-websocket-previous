@@ -33,20 +33,21 @@ public class GeminiLiveWebSocketTransport: Transport {
     }
 
     // Add this method to configure with API key
-    internal func configure(apiKey: String, initialMessages: [WebSocketMessages.Outbound.TextInput] = [], generationConfig: Value? = nil) {
+    internal func configure(apiKey: String, initialMessages: [WebSocketMessages.Outbound.TextInput] = [], generationConfig: Value? = nil, systemInstruction: String? = nil) {
         self._apiKey = apiKey
         connection.configure(
             apiKey: apiKey,
             initialMessages: initialMessages,
-            generationConfig: generationConfig
+            generationConfig: generationConfig,
+            systemInstruction: systemInstruction
         )
     }
     
     // Add this method to configure with system instruction
     internal func configureWithSystemInstruction(apiKey: String, systemInstruction: String) {
         self._apiKey = apiKey
+        // Do not put systemInstruction inside generationConfig. Pass it separately.
         let generationConfig = Value.object([
-            "systemInstruction": .string(systemInstruction),
             "responseModalities": .array([.string("AUDIO")]),
             "responseMimeType": .string("application/json"),
             "mediaResolution": .string("MEDIA_RESOLUTION_MEDIUM"),
@@ -58,11 +59,12 @@ public class GeminiLiveWebSocketTransport: Transport {
                 ])
             ])
         ])
-        
+
         connection.configure(
             apiKey: apiKey,
             initialMessages: [],
-            generationConfig: generationConfig
+            generationConfig: generationConfig,
+            systemInstruction: systemInstruction
         )
     }
     
