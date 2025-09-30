@@ -92,14 +92,9 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
             return Value.object([
                 "responseModalities": .array([.string("AUDIO")]),
                 "responseMimeType": .string("application/json"),
-                "mediaResolution": .string("MEDIA_RESOLUTION_MEDIUM"),
-                "speechConfig": .object([
-                    "voiceConfig": .object([
-                        "prebuiltVoiceConfig": .object([
-                            "voiceName": .string("Gacrux")
-                        ])
-                    ])
-                ])
+                "mediaResolution": .string("MEDIA_RESOLUTION_MEDIUM")
+                // Note: speechConfig/voiceConfig not currently supported by Gemini Live API
+                // The API will use default voice settings
             ])
         }()
 
@@ -123,18 +118,13 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
                     let endOfSpeechSensitivity: String?
                     let silenceDurationMs: Int?
                 }
-                struct ProactivityConfig: Encodable { let proactiveAudio: Bool? }
-                struct SpeechConfig: Encodable { let voiceConfig: VoiceConfig }
-                struct VoiceConfig: Encodable { let prebuiltVoiceConfig: PrebuiltVoiceConfig }
-                struct PrebuiltVoiceConfig: Encodable { let voiceName: String }
+                // Note: ProactivityConfig and SpeechConfig are not currently supported by Gemini Live API
                 struct SetupPayload: Encodable {
                     let model: String
                     let generationConfig: Value
                     let systemInstruction: Content?
                     let realtimeInputConfig: RealtimeInputConfig?
-                    let proactivity: ProactivityConfig?
                     let responseModalities: [String]?
-                    let speechConfig: SpeechConfig?
                 }
                 struct ClientMessage: Encodable { let setup: SetupPayload }
 
@@ -157,13 +147,7 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
                             ),
                             turnCoverage: "TURN_INCLUDES_ONLY_ACTIVITY"
                         ),
-                        proactivity: ProactivityConfig(proactiveAudio: true),
-                        responseModalities: ["AUDIO"],
-                        speechConfig: SpeechConfig(
-                            voiceConfig: VoiceConfig(
-                                prebuiltVoiceConfig: PrebuiltVoiceConfig(voiceName: "Gacrux")
-                            )
-                        )
+                        responseModalities: ["AUDIO"]
                     )
                 )
 
