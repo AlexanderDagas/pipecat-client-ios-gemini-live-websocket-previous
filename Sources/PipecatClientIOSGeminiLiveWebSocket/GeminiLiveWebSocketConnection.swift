@@ -20,6 +20,7 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
         let apiKey: String
         let initialMessages: [WebSocketMessages.Outbound.TextInput]
         let generationConfig: Value?
+        let systemInstructionText: String?
     }
     
     public weak var delegate: GeminiLiveWebSocketConnectionDelegate? = nil
@@ -37,11 +38,12 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
     }
     
     // Method to configure the connection after initialization
-    func configure(apiKey: String, initialMessages: [WebSocketMessages.Outbound.TextInput] = [], generationConfig: Value? = nil) {
+    func configure(apiKey: String, initialMessages: [WebSocketMessages.Outbound.TextInput] = [], generationConfig: Value? = nil, systemInstruction: String? = nil) {
         self.options = Options(
             apiKey: apiKey,
             initialMessages: initialMessages,
-            generationConfig: generationConfig
+            generationConfig: generationConfig,
+            systemInstructionText: systemInstruction
         )
     }
     
@@ -108,13 +110,30 @@ class GeminiLiveWebSocketConnection: NSObject, URLSessionWebSocketDelegate {
         for candidate in modelCandidates {
             do {
                 print("🔍 DEBUG: Trying setup with model candidate[\(currentModelIndex)]: \(candidate)")
-                // Use the supported Setup schema from WebSocketMessages
-                try await sendMessage(
-                    message: WebSocketMessages.Outbound.Setup(
+                // Build systemInstruction as Content-like structure if provided
+                struct TextPart: Encodable { let text: String }
+                struct Content: Encodable { let parts: [TextPart] }
+                struct SetupPayload: Encodable {
+                    let model: String
+                    let generationConfig: Value
+                    let systemInstruction: Content?
+                }
+                struct ClientMessage: Encodable { let setup: SetupPayload }
+
+                let systemInstruction: Content? = {
+                    guard let text = options.systemInstructionText, !text.isEmpty else { return nil }
+                    return Content(parts: [TextPart(text: text)])
+                }()
+
+                let setupMessage = ClientMessage(
+                    setup: SetupPayload(
                         model: candidate,
-                        generationConfig: genConfig
+                        generationConfig: genConfig,
+                        systemInstruction: systemInstruction
                     )
                 )
+
+                try await sendMessage(message: setupMessage)
                 print("🔍 DEBUG: Setup message sent successfully for: \(candidate)")
                 setupSucceeded = true
                 break
