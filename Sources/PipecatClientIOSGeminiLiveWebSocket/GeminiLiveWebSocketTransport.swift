@@ -303,9 +303,9 @@ public class GeminiLiveWebSocketTransport: Transport {
     private var botAudioTrackID: MediaTrackId?
     
     // MARK: - End-of-speech detection config
-    private let silenceDbThreshold: Float = -35.0
-    private let silentFramesForEnd: Int = 3
-    private let audioStreamEndCooldownNs: UInt64 = 200_000_000
+    private let silenceDbThreshold: Float = -40.0
+    private let silentFramesForEnd: Int = 6
+    private let audioStreamEndCooldownNs: UInt64 = 300_000_000
     private var consecutiveSilentFrames: Int = 0
     private var recentlySentAudioStreamEnd: Bool = false
     
